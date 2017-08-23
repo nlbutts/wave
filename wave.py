@@ -39,7 +39,10 @@ def generateSurface(size, A, k):
     
     # Create a pipe
     speed[0:size//2-20,:]=0
-    speed[-size//2+20::,0:-20]=0
+    speed[-size//2+20::,0:-5]=0
+
+    # Create a second vent hole
+    speed[-size//2+20::,-25:-15]=k
     
     return u, un, speed    
 
@@ -89,6 +92,9 @@ parser.add_argument('--size',
                     type=int,
                     default=100,
                     help='How large the simulation surface should be')
+parser.add_argument('-s', '--save',
+                    action='store_true',
+                    help='Save PNG files from the simulation')
 args = parser.parse_args()
 
 
@@ -109,6 +115,7 @@ w.addItem(g)
 size = args.size
 amp = args.amp
 k = args.decay
+saveFile = args.save
 u, un, speed = generateSurface(size, amp, k)
 x = np.linspace(-size/2, size/2, size+1)
 p4 = gl.GLSurfacePlotItem(x=x, y = x, shader='heightColor', computeNormals=False, smooth=False)
@@ -118,12 +125,13 @@ w.addItem(p4)
 
 index = 0
 def update():
-    global p4, z, index, u, un, speed, w
+    global p4, z, index, u, un, speed, w, saveFile
     p4.setData(z=u)
     u, un = step_wave_2d(u, un, speed)
-    saveFile = 'img{0:06}.png'.format(index)
-    index = index + 1
-    w.grabFrameBuffer().save(saveFile)
+    if saveFile:
+        saveFile = 'img{0:06}.png'.format(index)
+        index = index + 1
+        w.grabFrameBuffer().save(saveFile)
     
 timer = QtCore.QTimer()
 timer.timeout.connect(update)
